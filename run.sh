@@ -67,13 +67,19 @@ if [ "$1" == "import" ]; then
         DOWNLOAD_POLY="https://download.geofabrik.de/europe/luxembourg.poly"
     fi
 
+    if [ -n "${DOWNLOAD_POLY:-}" ]; then
+        echo "INFO: Download PBF-POLY file: $DOWNLOAD_POLY"
+        wget ${WGET_ARGS:-} "$DOWNLOAD_POLY" -O /data/region.poly
+    fi
+
     if [ -n "${DOWNLOAD_PBF:-}" ]; then
         echo "INFO: Download PBF file: $DOWNLOAD_PBF"
-        wget ${WGET_ARGS:-} "$DOWNLOAD_PBF" -O /data/region.osm.pbf
-        if [ -n "${DOWNLOAD_POLY:-}" ]; then
-            echo "INFO: Download PBF-POLY file: $DOWNLOAD_POLY"
-            wget ${WGET_ARGS:-} "$DOWNLOAD_POLY" -O /data/region.poly
+        if [ -f /data/region.poly ]; then
+            wget ${WGET_ARGS:-} "$DOWNLOAD_PBF" -O - | osmconvert - -B=/data/region.poly -o=/data/region.osm.pbf
+        else
+            wget ${WGET_ARGS:-} "$DOWNLOAD_PBF" -O /data/region.osm.pbf
         fi
+        chown renderer: /data/region.osm.pbf
     fi
 
     if [ "${UPDATES:-}" == "enabled" ] || [ "${UPDATES:-}" == "1" ]; then
